@@ -59,14 +59,41 @@ This guide is designed to help you deconstruct the codebase and upskill in moder
 
 ---
 
-## 3. Major Key Takeaways
+## 3. Connecting the Blog "Practical Data Engineering" to AirFlow-UG
+
+In Paweł Wiszniewski's blog post *Practical Data Engineering*, several industry standards are outlined. Here is how your AirFlow-UG project relates to and implements these concepts:
+
+### A. The ETL Pattern Choice
+* **Blog concept**: Paweł writes that for data under a few hundred thousand rows, Python-based **ETL (Extract-Transform-Load)** is highly effective, completing in under a minute.
+* **AirFlow-UG application**: You chose the Python ETL model. `src/transform.py` performs in-memory data cleaning, unit conversions, and validation in seconds using Pandas and Pandera before saving to R2.
+
+### B. Implementation of Technical Timestamps
+* **Blog concept**: Paweł stresses that data systems *must* add technical timestamps (Extraction timestamp, Transformation timestamp, etc.) to trace records and identify which run processed the data.
+* **AirFlow-UG application**: 
+  - During **ingestion**, `src/ingest.py` tags the raw file with metadata: `"ingested_at": datetime.now(timezone.utc).isoformat()`.
+  - During **transformation**, `src/transform.py` extracts that tag from R2 and appends it to every single row in the final Parquet file under the `ingested_at` column. This creates a perfect audit trail showing exactly when the data hit your data lake.
+
+### C. Partitioning & Overwriting (Idempotency)
+* **Blog concept**: The blog suggests that to avoid duplicates in daily/hourly runs, engineers must partition files and overwrite them on rerun.
+* **AirFlow-UG application**: Your pipeline uses date-partitioned storage:
+  - `date=<run_date>/<filename>` for raw CSVs.
+  - `date=<run_date>/readings.parquet` for transformed data.
+  - When you rerun the transform step, it does a full overwrite of that date's partition rather than an append, preventing data multiplication (ensuring **idempotency**).
+
+### D. Full vs. Incremental Strategy
+* **Blog concept**: Full downloads are simple, but incremental time-range downloads are used when data volumes are high. 
+* **AirFlow-UG application**: Because air quality sensors dump complete daily files, your pipeline runs a daily batch ingestion (Full day snapshots). However, because of the partition setup, the architecture is already prepared to switch to an incremental time-range pull if you scale to hourly scheduling.
+
+---
+
+## 4. Major Key Takeaways
 1. **Decouple Storage and Compute**: Store data in cheap, durable storage (like S3/R2 object storage) and bring compute engines (like DuckDB/Pandas) to the files when needed.
 2. **Never Mutate the Raw Layer**: Raw data is your single source of truth. If your downstream transforms corrupt the data, you should always be able to blow away the processed zone and rebuild it from raw.
 3. **Design for Failure (Idempotent & Resilient)**: Pipelines *will* fail. Code should assume that network requests will drop, runs will be executed twice, and source schemas will change. Write code that handles duplicates and anomalies gracefully.
 
 ---
 
-## 4. Code Walkthrough of Major Files
+## 5. Code Walkthrough of Major Files
 
 ### A. Ingestion (`src/ingest.py`)
 This script acts as the entry point for raw files. It handles moving data from local storage/incoming folders to Cloudflare R2.
@@ -100,7 +127,7 @@ Streamlit frontend for visual analytics.
 
 ---
 
-## 5. Step-by-Step Roadmap to Rebuild This Yourself
+## 6. Step-by-Step Roadmap to Rebuild This Yourself
 
 If you want to master this, **delete your local code (keep it pushed on GitHub)** and build it again piece by piece:
 
@@ -143,7 +170,7 @@ If you want to master this, **delete your local code (keep it pushed on GitHub)*
 
 ---
 
-## 6. High-Value Tasks for Upskilling
+## 7. High-Value Tasks for Upskilling
 
 Try editing the project on your own branch to practice:
 * **Task 1**: Add a new validation rule to the Pandera schema (e.g. temperature must be between -50°C and 60°C). Run `make chaos` to verify that invalid temperatures are quarantined.
