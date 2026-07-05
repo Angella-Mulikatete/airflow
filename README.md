@@ -2,6 +2,8 @@
 
 Cloud data pipeline: raw air-quality sensor CSV → validated Parquet in Cloudflare R2 → queryable via DuckDB → served through an API/dashboard.
 
+**Live Dashboard**: [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://airflow.streamlit.app/)
+
 ## Overview
 AirFlow-UG is a production-grade, end-to-end cloud data ingestion and transformation pipeline designed to handle raw environmental sensor telemetry. The pipeline processes raw air quality data from roadside devices (UCI Air Quality Dataset), transforms the wide sensor-specific table into a clean, long-format schema, and hosts the results in a cost-effective cloud data lake. Downstream clients can immediately explore the data via a FastAPI web service or an interactive Streamlit dashboard.
 
