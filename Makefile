@@ -1,7 +1,7 @@
 PYTHON ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 
-.PHONY: setup ingest transform run serve chaos
+.PHONY: setup ingest transform run serve dashboard chaos
 
 setup:
 	python3 -m venv .venv
@@ -18,6 +18,9 @@ run: ingest transform
 
 serve:
 	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+dashboard:
+	$(PYTHON) -m streamlit run dashboard/app.py
 
 chaos:
 	$(PYTHON) -m scripts.chaos_test

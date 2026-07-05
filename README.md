@@ -1,6 +1,6 @@
 # AirFlow-UG
 
-Cloud data pipeline: raw air-quality sensor CSV → validated Parquet on Cloudflare R2 → queryable via DuckDB → served through a FastAPI.
+Cloud data pipeline: raw air-quality sensor CSV → validated Parquet on Cloudflare R2 → queryable via DuckDB → served through a FastAPI and a Streamlit dashboard.
 
 See [`docs/architecture.md`](docs/architecture.md) for the data flow diagram and design rationale, and [`docs/schema.md`](docs/schema.md) for column definitions.
 
@@ -18,9 +18,10 @@ cp .env.example .env   # fill in R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCE
 ## Run
 
 ```
-make run      # ingest -> transform, single command, idempotent
-make serve    # FastAPI on :8000 (GET /health, /readings, /summary/daily)
-make chaos    # schema-drift + idempotency tests against live storage
+make run        # ingest -> transform, single command, idempotent
+make serve      # FastAPI on :8000 (GET /health, /readings, /summary/daily)
+make dashboard  # Streamlit dashboard on :8501
+make chaos      # schema-drift + idempotency tests against live storage
 ```
 
 A GitHub Actions workflow (`.github/workflows/pipeline.yml`) runs `make setup && make run` hourly via cron and on manual dispatch — the scheduled trigger requires the three `R2_*` values as repository secrets.
